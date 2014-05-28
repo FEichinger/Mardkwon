@@ -1,26 +1,38 @@
 <?php
-	/* Generic Stack class */
 	class ParserStack {
 		private $stack;
-		
-		const FIFO = 0x0001;
-		const FILO = 0x0002;
 		
 		public function __construct() {
 			$this->stack = array();
 		}
 		
-		public function pop($method = self::FIFO) {
-			if($method == self::FIFO) {
-				return array_shift($this->stack);
-			}
-			else {
-				return array_pop($this->stack);
-			}
+		public function pop() {
+			return array_shift($this->stack);
 		}
 		
-		public function push($item) {
+		public function push(MarkdownStackItem $item) {
 			array_push($this->stack, $item);
+		}
+		
+		public function cleanup() {
+			if(!count($this->stack)) return;
+			
+			$newstack = array();
+			
+			$last = $this->stack[0];
+			for($i = 1; $i < count($this->stack); $i++) {
+				$next = $this->stack[$i];
+				if($last->get_opcode() != $next->get_opcode()-1) {
+					$newstack[] = $last;
+				}
+				else {
+					$i++;
+					$next = (isset($this->stack[$i])) ? ($this->stack[$i]) : null;
+				}
+				$last = $next;
+			}
+			$newstack[] = $last;
+			$this->stack = $newstack;
 		}
 		
 		public function clear() {

@@ -1,33 +1,5 @@
 <?php
-	/* Markdown Stack classes for direct-to-HTML translateables */
-	interface MarkdownStackItem {
-		public function translate();
-		public function get_opcode();
-	}
-	
-	class MarkdownString implements MarkdownStackItem {
-		private $string;
-		public function __construct($s) {
-			$this->string = $s;
-		}
-		
-		public function get_opcode() {
-			return -1;
-		}
-		
-		public function translate() {
-			$s = htmlentities($this->string, ENT_NOQUOTES);
-			foreach(array(	"ul", "li", "b", "i", "em",
-							"strong", "h1", "h2", "h3",
-							"h4", "h5", "h6", "hr",
-							"a href=\"([^\"])+\"", "a")
-				as $allowed_tag) {
-				$s = preg_replace("<&lt;(".$allowed_tag.")&gt;>", "<$1>", $s);
-				$s = preg_replace("<&lt;/(".$allowed_tag.")&gt;>", "</$1>", $s);
-			}
-			return $s;
-		}
-	}
+	require_once("MarkdownStackItem.class.php");
 	
 	class MarkdownOpCode implements MarkdownStackItem {
 		const BOLD_ON = 0x0001;
@@ -58,6 +30,11 @@
 		
 		const PARAGRAPH_START = 0x0027;
 		const PARAGRAPH_END = 0x0028;
+		
+		const ULIST_START = 0x0030;
+		const ULIST_END = 0x0031;
+		
+		const LISTITEM = 0x0033;
 		
 		private $code;
 		public function __construct($c) {
@@ -108,8 +85,15 @@
 					return "<p>";
 				case self::PARAGRAPH_END:
 					return "</p>";
+				case self::ULIST_START:
+					return "<ul>";
+				case self::ULIST_END:
+					return "</ul>";
+				case self::LISTITEM:
+					return "<li>";
 			default:
 					return "&lt;".$this->code."&gt;";
 			}
 		}
 	}
+	
