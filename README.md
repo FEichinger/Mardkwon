@@ -5,11 +5,9 @@ Markdwon is a PHP Markdown Parser
 
 ## Installation
 
-Simply include all the necessary files:
+Simply include the main parser class:
 
     require_once("MarkdownParser.class.php");
-    require_once("ParserStack.class.php");
-    require_once("MarkdownStackItems.class.php");
 
 Then create a new MarkdownParser object, and let it parse the Markdown into HTML:
 
@@ -17,4 +15,4 @@ Then create a new MarkdownParser object, and let it parse the Markdown into HTML
     $parser = new MarkdownParser();
     $parser->to_html($string);
 
-The actual parsing is a bit wonky and currently only supports `[#]{1..6}`, `[*]*`, and `[_]*`, but it works for what we need.
+Supports `*` & `_` bold/italic, `#` headlines, and `-` lists.
