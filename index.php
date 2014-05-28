@@ -1,6 +1,16 @@
 <?php
 	require_once("MarkdownParser.class.php");
-
-	$string = "**This is* a valid Markdown __string__\n\nWith multiple lines\n\n- And even\n-a list!";
+	
+	$string = "#This works!#\n... *Hopefully!*";
+	if(isset($_POST["string"])) $string = $_POST["string"];
+	
 	$parser = new MarkdownParser();
-	echo $parser->to_html($string);
+?>
+<form action="" method="POST">
+	<textarea style="width: 50%; height: 20em;" name="string"><?php echo $string; ?></textarea><br>
+	<input type="submit" />
+</form>
+
+<div style="background-color: #ccc; padding: 0.5em;">
+<?php echo $parser->to_html($string); ?>
+</div>
