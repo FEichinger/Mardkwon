@@ -12,7 +12,9 @@
 			$string = str_replace("\r\n", "\n", $string);
 			$string = str_replace("\r", "\n", $string);
 			$string = trim($string);
-			return "\n\n".$string."\n\n";
+			$string = "\n\n".$string."\n\n";
+			$string = preg_replace("/(\n\n)(\n)+/", "\n\n", $string);
+			return $string;
 		}
 		
 		public function to_html($string) {

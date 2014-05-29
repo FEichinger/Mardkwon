@@ -73,6 +73,67 @@
 					}
 					break;
 					
+				case self::NEWLINE:
+					switch($c) {
+						case "*":
+							if(!($this->italic_ast || $this->bold_ast)) {
+								$this->asterisk++;
+								$this->current_state = self::ASTERISK_OPEN;
+							}
+							else $this->append_character($c);
+							break;
+							
+						case "_":
+							if(!($this->italic_und || $this->bold_und)) {
+								$this->underline++;
+								$this->current_state = self::UNDERLINE_OPEN;
+							}
+							else $this->append_character($c);
+							break;
+							
+						case "#":
+							if(!($this->headline)) {
+								$this->hash++;
+								$this->current_state = self::HASH_OPEN;
+							}
+							else $this->append_character($c);
+							break;
+							
+						case "\n":
+							if($this->ulist) $this->switch_ulist(false);
+							$this->new_paragraph();
+							$this->current_state = self::NEWPARAGRAPH;
+							break;
+							
+						default:
+							$this->current_state = self::MAINFLOW;
+							$this->append_character($c);
+					}
+					break;
+					
+				case self::WHITESPACE:
+					switch($c) {
+						case "*":
+							$this->asterisk++;
+							$this->current_state = self::ASTERISK_OPEN;
+							break;
+							
+						case "_":
+							$this->underline++;
+							$this->current_state = self::UNDERLINE_OPEN;
+							break;
+							
+						case "\n":
+							$this->current_state = self::NEWLINE;
+							$this->add_linebreak();
+							break;
+							
+						default:
+							$this->current_state = self::MAINFLOW;
+							$this->append_character($c);
+					}
+					break;
+					
 				case self::NEWPARAGRAPH:
 					switch($c) {
 						case "*":
@@ -126,89 +187,21 @@
 				case self::ULISTNEWLINE:
 					switch($c) {
 						case " ":
-							$this->append_character($c);
 							break;
 							
 						case "-":
 							$this->add_listitem();
-							$this->current_status = self::ULISTITEM;
+							$this->current_state = self::ULISTITEM;
 							break;
 							
 						case "\n":
 							$this->current_state = self::NEWPARAGRAPH;
 							$this->switch_ulist(false);
-							$this->append_character($c);
 							break;
 						
 						default:
 							$this->current_state = self::MAINFLOW;
-							$this->append_character($c);
-					}
-					break;
-					
-				case self::NEWLINE:
-					switch($c) {
-						case "*":
-							if(!($this->italic_ast || $this->bold_ast)) {
-								$this->asterisk++;
-								$this->current_state = self::ASTERISK_OPEN;
-							}
-							else $this->append_character($c);
-							break;
-							
-						case "_":
-							if(!($this->italic_und || $this->bold_und)) {
-								$this->underline++;
-								$this->current_state = self::UNDERLINE_OPEN;
-							}
-							else $this->append_character($c);
-							break;
-							
-						case "#":
-							if(!($this->headline)) {
-								$this->hash++;
-								$this->current_state = self::HASH_OPEN;
-							}
-							else $this->append_character($c);
-							break;
-							
-						case "\n":
-							if($this->ulist) $this->switch_ulist(false);
-							$this->new_paragraph();
-							$this->current_state = self::NEWPARAGRAPH;
-							break;
-							
-						default:
-							$this->current_state = self::MAINFLOW;
-							$this->append_character($c);
-					}
-					break;
-					
-				case self::WHITESPACE:
-					switch($c) {
-						case "*":
-							if(!($this->italic_ast || $this->bold_ast)) {
-								$this->asterisk++;
-								$this->current_state = self::ASTERISK_OPEN;
-							}
-							else $this->append_character($c);
-							break;
-							
-						case "_":
-							if(!($this->italic_und || $this->bold_und)) {
-								$this->underline++;
-								$this->current_state = self::UNDERLINE_OPEN;
-							}
-							else $this->append_character($c);
-							break;
-							
-						case "\n":
-							$this->current_state = self::NEWLINE;
-							$this->add_linebreak();
-							break;
-							
-						default:
-							$this->current_state = self::MAINFLOW;
+							$this->switch_ulist(false);
 							$this->append_character($c);
 					}
 					break;
@@ -289,12 +282,18 @@
 							break;
 							
 						case "\n":
+							if($this->asterisk === 1) $this->switch_italic_ast(false);
+							else if($this->asterisk === 2) $this->switch_bold_ast(false);
+							else if($this->asterisk === 3) { $this->switch_italic_ast(false); $this->switch_bold_ast(false); }
+							$this->asterisk = 0;
 							$this->current_state = self::NEWLINE;
 							$this->append_character($c);
 							break;
 							
 						default:
 							$this->current_state = self::MAINFLOW;
+							$this->asterisk = 0;
+							$this->append_character("*");
 							$this->append_character($c);
 					}
 					break;
@@ -318,12 +317,18 @@
 							break;
 							
 						case "\n":
+							if($this->underline === 1) $this->switch_italic_und(false);
+							else if($this->underline === 2) $this->switch_bold_und(false);
+							else if($this->underline === 3) { $this->switch_italic_und(false); $this->switch_bold_und(false); }
+							$this->underline = 0;
 							$this->current_state = self::NEWLINE;
 							$this->append_character($c);
 							break;
 							
 						default:
 							$this->current_state = self::MAINFLOW;
+							$this->underline = 0;
+							$this->append_character("_");
 							$this->append_character($c);
 					}
 					break;
@@ -347,6 +352,12 @@
 					switch($c) {
 						case "#":
 							$this->current_state = self::HASH_CLOSE;
+							break;
+							
+						case "\n":
+							$this->switch_headline($this->headline, false);
+							$this->headline = 0;
+							$this->current_state = self::NEWLINE;
 							break;
 							
 						default:
@@ -439,8 +450,14 @@
 				default: $opcode_o = MarkdownOpCode::H6_ON; $opcode_c = MarkdownOpCode::H6_OFF; break;
 			}
 			
-			if($on) $this->stack_out->push(new MarkdownOpCode($opcode_o));
-			else $this->stack_out->push(new MarkdownOpCode($opcode_c));
+			if($on) {
+				$this->stack_out->push(new MarkdownOpCode(MarkdownOpCode::PARAGRAPH_END));
+				$this->stack_out->push(new MarkdownOpCode($opcode_o));
+			}
+			else {
+				$this->stack_out->push(new MarkdownOpCode($opcode_c));
+				$this->stack_out->push(new MarkdownOpCode(MarkdownOpCode::PARAGRAPH_START));
+			}
 		}
 	}
 	

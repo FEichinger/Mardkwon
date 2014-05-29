@@ -11,7 +11,9 @@
 		}
 		
 		public function push(MarkdownStackItem $item) {
-			array_push($this->stack, $item);
+			$i = count($this->stack)-1;
+			if(isset($this->stack[$i]) && $this->stack[$i]->get_opcode() == "-1") $this->stack[$i]->append_char($item->translate());
+			else array_push($this->stack, $item);
 		}
 		
 		public function cleanup() {
@@ -19,19 +21,20 @@
 			
 			$newstack = array();
 			
-			$last = $this->stack[0];
-			for($i = 1; $i < count($this->stack); $i++) {
-				$next = $this->stack[$i];
-				if($last->get_opcode() != $next->get_opcode()-1) {
-					$newstack[] = $last;
+			for($i = 0; $i < count($this->stack); $i++) {
+				$current = $this->stack[$i];
+				
+				if(isset($this->stack[$i+1])) {
+					$next = $this->stack[$i+1];
 				}
 				else {
-					$i++;
-					$next = (isset($this->stack[$i])) ? ($this->stack[$i]) : null;
+					$newstack[] = $current;
+					break;
 				}
-				$last = $next;
+				
+				if($current->get_opcode()+1 == $next->get_opcode()) $i++;
+				else $newstack[] = $current;
 			}
-			$newstack[] = $last;
 			$this->stack = $newstack;
 		}
 		
